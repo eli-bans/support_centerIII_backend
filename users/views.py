@@ -13,6 +13,13 @@ class UserViewSet(generics.ListCreateAPIView):
             return UserRegistrationSerializer
         return UserSerializer
 
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+    
 class UserDetailViewSet(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
