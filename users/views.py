@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.mail import send_mail
 from django.conf import settings
-from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
+from .models import Student, Tutor
+from .serializers import UserSerializer, UserRegistrationSerializer, StudentSerializer, TutorSerializer
 
 User = get_user_model()
 
