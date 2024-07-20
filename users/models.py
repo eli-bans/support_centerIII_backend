@@ -1,8 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
-import uuid
 from django.utils import timezone
-from datetime import timedelta
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -26,14 +24,13 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username = None  # Remove the username field
     email = models.EmailField(unique=True)  # Use email as the unique identifier
     is_student = models.BooleanField(default=False)
     is_tutor = models.BooleanField(default=False)
     reset_password_token = models.UUIDField(default=None, null=True, blank=True)
     reset_password_token_expires = models.DateTimeField(default=None, null=True, blank=True)
 
-    # Add custom related names to avoid clashes
+
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',
@@ -54,11 +51,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    def generate_reset_token(self):
-        self.reset_password_token = uuid.uuid4()
-        self.reset_password_token_expires = timezone.now() + timedelta(hours=1)
-        self.save()
-
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # Additional fields for students
@@ -66,3 +58,12 @@ class Student(models.Model):
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # Additional fields for tutors
+
+class PasswordReset(models.Model):
+    email = models.EmailField()
+    token = models.CharField(max_length=100, unique=True, blank=True)
+    token_expires = models.DateTimeField(blank=True)
+
+    @classmethod
+    def delete_expired_tokens(cls):
+        cls.objects.filter(token_expires__lte=timezone.now()).delete()
