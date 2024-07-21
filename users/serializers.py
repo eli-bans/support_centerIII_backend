@@ -1,29 +1,54 @@
+'''
+This file contains the serializers for the User, Student, Tutor, PasswordReset models.
+It also contains the MyTokenObtainPairSerializer, which is used to customize the JWT token response.
+'''
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Student, Tutor, PasswordReset, User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.conf import settings
+from datetime import timedelta
+from django.utils import timezone
 
+from .models import Student, Tutor, PasswordReset, User
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for the User model.
+    - id: Integer field to store the user id.
+    - email: Email field to store the user email.
+    - is_student: Boolean field to indicate if the user is a student.
+    - is_tutor: Boolean field to indicate if the user is a tutor.
+    '''
     class Meta:
         model = User
         fields = ['id', 'email', 'is_student', 'is_tutor']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    '''
+    Serializer for user registration.
+    '''
+    password = serializers.CharField(write_only=True) #password is write only because we don't want to return it in the response
 
-    class Meta:
+    class Meta: 
+        '''
+        Meta class is used to specify the model and fields for the serializer.
+        '''
         model = User
         fields = ['id', 'email', 'password', 'is_student', 'is_tutor']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        is_student = validated_data.pop('is_student', False)
-        is_tutor = validated_data.pop('is_tutor', False)
+        is_student = validated_data.pop('is_student', False) #pop the is_student field from the validated data because it's not part of the User model
+        is_tutor = validated_data.pop('is_tutor', False) #pop the is_tutor field from the validated data because it's not part of the User model
         
-        user = User.objects.create_user(
+        user = User.objects.create_user(   
             email=validated_data['email'],
             password=validated_data['password'],
             is_student=is_student,
@@ -31,18 +56,21 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         )
         
         if is_student:
-            print('Creating student')
+            # print('Creating student')
             Student.objects.create(user=user)
         
         if is_tutor:
-            print('Creating tutor')
+            # print('Creating tutor')
             Tutor.objects.create(user=user)
         
         return user
 
     
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
+    '''
+    Custom serializer for the JWT token response.
+    '''
+    @classmethod #classmethod decorator is used to define a method that can be called on the class itself, rather than on an instance of the class.
     def get_token(cls, user):
         token = super().get_token(user)
         token['email'] = user.email
@@ -51,6 +79,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 class StudentSerializer(serializers.ModelSerializer):
+    '''
+    Provides a way to serialize and deserialize the Student model.
+    '''
     user_id = serializers.IntegerField(source='user.id')
     email = serializers.EmailField(source='user.email')
     is_student = serializers.BooleanField(source='user.is_student')
@@ -61,6 +92,9 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_id', 'email', 'is_student', 'is_tutor']
 
 class TutorSerializer(serializers.ModelSerializer):
+    '''
+    Provides a way to serialize and deserialize the Tutor model.
+    '''
     user = UserSerializer()
 
     class Meta:
@@ -68,15 +102,8 @@ class TutorSerializer(serializers.ModelSerializer):
         fields = ['user', 'subjects_offered', 'bio', 'rating']
 
 
-from rest_framework import serializers
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.conf import settings
-from datetime import timedelta
-from django.utils import timezone
+
+
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()

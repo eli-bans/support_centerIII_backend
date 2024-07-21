@@ -1,8 +1,18 @@
+'''
+This is the models.py file for the users app. 
+It contains the models for the User, Student, Tutor, and PasswordReset classes.
+'''
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
+    '''
+    Custom user manager for the User model.
+    Uses email as the unique identifier for authentication and 
+    saves the user with the given email and password.
+    '''
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -24,6 +34,13 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
+    '''
+    Custom user model with email as the unique identifier.
+    - is_student: Boolean field to indicate if the user is a student.
+    - is_tutor: Boolean field to indicate if the user is a tutor.
+    - reset_password_token: UUID field to store the reset password token.
+    - reset_password_token_expires: DateTime field to store the expiration time of the reset password token.
+    '''
     email = models.EmailField(unique=True)  # Use email as the unique identifier
     is_student = models.BooleanField(default=False)
     is_tutor = models.BooleanField(default=False)
@@ -52,18 +69,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
 class Student(models.Model):
+    '''
+    Model for student users.
+    '''
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # Additional fields for students
 
 class Tutor(models.Model):
+    '''
+    Model for tutor users.
+    '''
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # Additional fields for tutors
 
 class PasswordReset(models.Model):
+    '''
+    Model to store the password reset token and its expiration time.
+    '''
     email = models.EmailField()
     token = models.CharField(max_length=100, unique=True, blank=True)
     token_expires = models.DateTimeField(blank=True)
 
     @classmethod
-    def delete_expired_tokens(cls):
+    def delete_expired_tokens(cls): #delete from db after token expires
         cls.objects.filter(token_expires__lte=timezone.now()).delete()
