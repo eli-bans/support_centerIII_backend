@@ -29,7 +29,7 @@ SECRET_KEY = "django-insecure-^s0#cw5-zel*)82#&1+*9^=izh!2*%16uevoeh+pnd^a$u@n7r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"] # This is a security risk, but it's fine for development
 
 
 # Application definition
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework",
     "users",
+    "forum",
     "corsheaders"
 ]
 
@@ -89,6 +90,12 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
 }
 
 
