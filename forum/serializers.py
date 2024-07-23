@@ -53,10 +53,30 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'answer_id', 'user', 'content', 'timestamp']
 
+# class VoteSerializer(serializers.ModelSerializer):
+#     user = serializers.ReadOnlyField(source='user.email')
+#     answer = serializers.ReadOnlyField(source='answer.id')
+
+#     class Meta:
+#         model = Vote
+#         fields = ['id', 'answer', 'user', 'vote_type']
+
+
 class VoteSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.email')
-    answer = serializers.ReadOnlyField(source='answer.id')
+    answer_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Vote
-        fields = ['id', 'answer', 'user', 'vote_type']
+        fields = ['id', 'answer', 'answer_id', 'user', 'vote_type']
+        read_only_fields = ['answer']
+
+    def create(self, validated_data):
+        answer_id = validated_data.pop('answer_id')
+        try:
+            answer = Answer.objects.get(id=answer_id)
+        except Answer.DoesNotExist:
+            raise serializers.ValidationError("Answer not found.")
+        validated_data['answer'] = answer
+        return super().create(validated_data)
+

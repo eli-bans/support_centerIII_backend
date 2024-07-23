@@ -93,6 +93,14 @@ class CommentListCreateView(generics.ListCreateAPIView):
 #         serializer = self.get_serializer(queryset, many=True)
 #         return Response(serializer.data)
 
+# class VoteListCreateView(generics.ListCreateAPIView):
+#     queryset = Vote.objects.all()
+#     serializer_class = VoteSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
+
 class VoteListCreateView(generics.ListCreateAPIView):
     queryset = Vote.objects.all()
     serializer_class = VoteSerializer

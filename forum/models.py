@@ -39,4 +39,3 @@ class Vote(models.Model):
         return f"{self.vote_type.capitalize()} by {self.user.email} on {self.answer.id}"
 
 
-
