@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from .models import Student, Tutor
 from .serializers import UserSerializer, UserRegistrationSerializer, StudentSerializer, TutorSerializer, MyTokenObtainPairSerializer, PasswordResetSerializer, PasswordResetConfirmSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 User = get_user_model()
@@ -17,6 +18,7 @@ class UserViewSet(generics.ListCreateAPIView):
     View for listing and creating users.
     '''
     queryset = User.objects.all()
+    parser_classes = (MultiPartParser, FormParser) #add parser classes to handle file uploads
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -59,6 +61,10 @@ class TutorViewSet(generics.ListCreateAPIView):
     '''
     queryset = Tutor.objects.all()
     serializer_class = TutorSerializer
+    parser_classes = (MultiPartParser, FormParser) #add parser classes to handle file uploads
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class TutorDetailViewSet(generics.RetrieveUpdateDestroyAPIView):
     '''

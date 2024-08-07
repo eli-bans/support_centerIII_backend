@@ -3,6 +3,8 @@ from .views import (UserViewSet, UserDetailViewSet, StudentViewSet,
                     StudentDetailViewSet, TutorViewSet, TutorDetailViewSet, 
                     MyTokenObtainPairView, PasswordResetView,PasswordResetConfirmView)
 from rest_framework_simplejwt.views import TokenRefreshView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('users/', UserViewSet.as_view(), name='user-list'),
@@ -16,3 +18,6 @@ urlpatterns = [
     path('login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

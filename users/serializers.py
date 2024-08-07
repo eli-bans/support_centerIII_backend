@@ -28,32 +28,41 @@ class UserSerializer(serializers.ModelSerializer):
     '''
     class Meta:
         model = User
-        fields = ['id', 'email', 'is_student', 'is_tutor']
+        fields = ['id', 'email', 'is_student', 'is_tutor','profile_picture']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     '''
     Serializer for user registration.
     '''
     password = serializers.CharField(write_only=True) #password is write only because we don't want to return it in the response
+    profile_picture = serializers.ImageField(required=False) #profile picture is not required for registration
 
     class Meta: 
         '''
         Meta class is used to specify the model and fields for the serializer.
         '''
         model = User
-        fields = ['id', 'email', 'password', 'is_student', 'is_tutor']
+        fields = ['id', 'email', 'password', 'is_student', 'is_tutor','profile_picture']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
         is_student = validated_data.pop('is_student', False) #pop the is_student field from the validated data because it's not part of the User model
         is_tutor = validated_data.pop('is_tutor', False) #pop the is_tutor field from the validated data because it's not part of the User model
+        profile_picture = validated_data.pop('profile_picture', None) #pop the profile_picture field from the validated data because it's not part of the User model
+        password = validated_data.pop('password') #pop the password field from the validated data because it's not part of the User model
         
         user = User.objects.create_user(   
             email=validated_data['email'],
-            password=validated_data['password'],
             is_student=is_student,
-            is_tutor=is_tutor
+            is_tutor=is_tutor,
+            profile_picture=profile_picture
         )
+        user.set_password(password)
+        user.save()
+
+        # if profile_picture:
+        #     user.profile_picture = profile_picture
+        #     user.save() 
         
         if is_student:
             # print('Creating student')
@@ -96,13 +105,11 @@ class TutorSerializer(serializers.ModelSerializer):
     Provides a way to serialize and deserialize the Tutor model.
     '''
     user = UserSerializer()
+    profile_picture = serializers.ImageField(required=False)
 
     class Meta:
         model = Tutor
-        fields = ['user', 'subjects_offered', 'bio', 'rating']
-
-
-
+        fields = ['user','profile_picture', 'subjects_offered', 'bio', 'rating']
 
 
 class PasswordResetSerializer(serializers.Serializer):

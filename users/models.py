@@ -33,6 +33,9 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
+def profile_picture_upload_path(instance, filename):
+    return f'profile_pictures/{instance.id}/{filename}'
+
 class User(AbstractBaseUser, PermissionsMixin):
     '''
     Custom user model with email as the unique identifier.
@@ -46,6 +49,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_tutor = models.BooleanField(default=False)
     reset_password_token = models.UUIDField(default=None, null=True, blank=True)
     reset_password_token_expires = models.DateTimeField(default=None, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to=profile_picture_upload_path, blank=True, null=True)
+    
+
 
 
     groups = models.ManyToManyField(
@@ -80,7 +86,6 @@ class Tutor(models.Model):
     Model for tutor users.
     '''
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # Additional fields for tutors
 
 class PasswordReset(models.Model):
     '''
