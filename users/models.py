@@ -50,7 +50,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     reset_password_token = models.UUIDField(default=None, null=True, blank=True)
     reset_password_token_expires = models.DateTimeField(default=None, null=True, blank=True)
     profile_picture = models.ImageField(upload_to=profile_picture_upload_path, blank=True, null=True)
-    
 
 
 
@@ -81,11 +80,24 @@ class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # Additional fields for students
 
+class Course(models.TextChoices):
+    INTRO_TO_AI = 'AI', 'Intro to AI'
+    DATA_STRUCTURES = 'DS', 'Data Structure and Algorithms'
+    WEB_TECH = 'WT', 'Web Technologies'
+    MODELLING = 'MS', 'Modelling and Simulations'
+
 class Tutor(models.Model):
     '''
     Model for tutor users.
     '''
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    year = models.IntegerField()
+    courses = models.CharField(max_length=2, choices=Course.choices, default=Course.INTRO_TO_AI)
+    bio = models.TextField(blank=True)
+    rating = models.FloatField(default=0.0)
+    total_ratings = models.IntegerField(default=0)
 
 class PasswordReset(models.Model):
     '''

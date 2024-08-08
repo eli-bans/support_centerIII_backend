@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (UserViewSet, UserDetailViewSet, StudentViewSet, 
                     StudentDetailViewSet, TutorViewSet, TutorDetailViewSet, 
-                    MyTokenObtainPairView, PasswordResetView,PasswordResetConfirmView)
+                    MyTokenObtainPairView, PasswordResetView,PasswordResetConfirmView, TutorRatingView, TutorAverageRatingView)
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -17,6 +17,8 @@ urlpatterns = [
     path('tutors/<int:pk>/', TutorDetailViewSet.as_view(), name='tutor-detail'),
     path('login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('tutors/<int:pk>/rate/', TutorRatingView.as_view(), name='tutor-rate'),
+    path('tutors/<int:pk>/average-rating/', TutorAverageRatingView.as_view(), name='tutor-average-rating'),
 ]
 
 if settings.DEBUG:

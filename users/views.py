@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from .models import Student, Tutor
-from .serializers import UserSerializer, UserRegistrationSerializer, StudentSerializer, TutorSerializer, MyTokenObtainPairSerializer, PasswordResetSerializer, PasswordResetConfirmSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, StudentSerializer, TutorSerializer, MyTokenObtainPairSerializer, PasswordResetSerializer, PasswordResetConfirmSerializer, TutorRatingSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -73,6 +73,30 @@ class TutorDetailViewSet(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tutor.objects.all()
     serializer_class = TutorSerializer
 
+class TutorRatingView(generics.UpdateAPIView):
+    queryset = Tutor.objects.all()
+    serializer_class = TutorRatingSerializer
+
+    def update(self, request, *args, **kwargs):
+        tutor = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        new_rating = serializer.validated_data['rating']
+        tutor.total_ratings += 1
+        tutor.rating = ((tutor.rating * (tutor.total_ratings - 1)) + new_rating) / tutor.total_ratings
+        tutor.save()
+
+        return Response({'rating': tutor.rating}, status=status.HTTP_200_OK)
+    
+
+class TutorAverageRatingView(generics.RetrieveAPIView):
+    queryset = Tutor.objects.all()
+    serializer_class = TutorSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        tutor = self.get_object()
+        return Response({'average_rating': tutor.rating}, status=status.HTTP_200_OK)
 
 class PasswordResetView(generics.GenericAPIView):
     '''

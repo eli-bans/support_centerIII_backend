@@ -14,7 +14,9 @@ from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
 
-from .models import Student, Tutor, PasswordReset, User
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+from .models import Student, Tutor, PasswordReset, User, Course
 
 User = get_user_model()
 
@@ -106,11 +108,14 @@ class TutorSerializer(serializers.ModelSerializer):
     '''
     user = UserSerializer()
     profile_picture = serializers.ImageField(required=False)
+    courses = serializers.ChoiceField(choices=Course.choices)
 
     class Meta:
         model = Tutor
-        fields = ['user','profile_picture', 'subjects_offered', 'bio', 'rating']
+        fields = ['id', 'user', 'profile_picture', 'first_name', 'last_name', 'year', 'courses', 'bio', 'rating']
 
+class TutorRatingSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
