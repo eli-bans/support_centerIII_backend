@@ -156,7 +156,28 @@ from rest_framework.permissions import IsAdminUser
 from .serializers import TutorCreateSerializer
 from .models import Tutor
 
+# class TutorCreateView(CreateAPIView):
+#     queryset = Tutor.objects.all()
+#     serializer_class = TutorCreateSerializer
+#     permission_classes = [IsAdminUser]
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
 class TutorCreateView(CreateAPIView):
     queryset = Tutor.objects.all()
     serializer_class = TutorCreateSerializer
     permission_classes = [IsAdminUser]
+
+    def perform_create(self, serializer):
+        email = serializer.validated_data.pop('email')
+        user = User.objects.get(email=email)
+        
+        if user.is_tutor:
+            raise ValidationError("This user is already a tutor.")
+        
+        user.is_student = False
+        user.is_tutor = True
+        user.save()
+        
+        serializer.save(user=user)

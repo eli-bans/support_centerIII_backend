@@ -47,6 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)  # Use email as the unique identifier
     is_student = models.BooleanField(default=False)
     is_tutor = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
     reset_password_token = models.UUIDField(default=None, null=True, blank=True)
     reset_password_token_expires = models.DateTimeField(default=None, null=True, blank=True)
     profile_picture = models.ImageField(upload_to=profile_picture_upload_path, blank=True, null=True)

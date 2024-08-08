@@ -173,15 +173,16 @@ class TutorUpdateSerializer(TutorSerializer):
         fields = ['profile_picture', 'first_name', 'last_name', 'year', 'email', 'courses', 'bio']
 
 
-class TutorCreateSerializer(TutorSerializer):
-    user = UserSerializer(required=True)
-
+class TutorCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True)
+    
     class Meta:
         model = Tutor
-        fields = ['user', 'profile_picture', 'first_name', 'last_name', 'year', 'courses', 'bio']
+        fields = ['email', 'first_name', 'last_name', 'year', 'courses', 'bio']
 
-    def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        user = User.objects.create_user(**user_data)
-        tutor = Tutor.objects.create(user=user, **validated_data)
-        return tutor
+    def validate_email(self, value):
+        try:
+            User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist.")
+        return value
