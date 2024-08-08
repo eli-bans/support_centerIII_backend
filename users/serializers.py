@@ -70,7 +70,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             # print('Creating student')
             Student.objects.create(user=user)
         
-        if is_tutor:
+        if is_tutor:  # a bit skeptical about this part
             # print('Creating tutor')
             Tutor.objects.create(user=user)
         
@@ -164,3 +164,24 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save()
         reset_obj.delete()
         return attrs
+
+class TutorUpdateSerializer(TutorSerializer):
+    email = serializers.EmailField(read_only=True)
+
+    class Meta:
+        model = Tutor
+        fields = ['profile_picture', 'first_name', 'last_name', 'year', 'email', 'courses', 'bio']
+
+
+class TutorCreateSerializer(TutorSerializer):
+    user = UserSerializer(required=True)
+
+    class Meta:
+        model = Tutor
+        fields = ['user', 'profile_picture', 'first_name', 'last_name', 'year', 'courses', 'bio']
+
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')
+        user = User.objects.create_user(**user_data)
+        tutor = Tutor.objects.create(user=user, **validated_data)
+        return tutor

@@ -24,7 +24,15 @@ class UserViewSet(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return UserRegistrationSerializer
         return UserSerializer
+class AdminUserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
 
 class MyTokenObtainPairView(TokenObtainPairView):
     '''
@@ -56,15 +64,24 @@ class StudentDetailViewSet(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentSerializer
 
 class TutorViewSet(generics.ListCreateAPIView):
-    '''
-    View for listing and creating tutors.
-    '''
     queryset = Tutor.objects.all()
     serializer_class = TutorSerializer
-    parser_classes = (MultiPartParser, FormParser) #add parser classes to handle file uploads
+    parser_classes = (MultiPartParser, FormParser)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        if self.request.user.is_staff:
+            user = serializer.validated_data['user']
+            user.is_student = False
+            user.is_tutor = True
+            user.save()
+        else:
+            user = self.request.user
+            serializer.save(user=user)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST' and self.request.user.is_staff:
+            return TutorSerializer
+        return TutorSerializer
 
 class TutorDetailViewSet(generics.RetrieveUpdateDestroyAPIView):
     '''
@@ -120,3 +137,26 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response({"detail": "Password has been reset successfully."}, status=200)
+
+from rest_framework.generics import UpdateAPIView
+from .serializers import TutorUpdateSerializer
+from .models import Tutor
+from rest_framework.permissions import IsAuthenticated
+
+class TutorUpdateView(UpdateAPIView):
+    queryset = Tutor.objects.all()
+    serializer_class = TutorUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.queryset.get(user=self.request.user)
+    
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAdminUser
+from .serializers import TutorCreateSerializer
+from .models import Tutor
+
+class TutorCreateView(CreateAPIView):
+    queryset = Tutor.objects.all()
+    serializer_class = TutorCreateSerializer
+    permission_classes = [IsAdminUser]

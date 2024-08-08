@@ -98,6 +98,7 @@ class Tutor(models.Model):
     bio = models.TextField(blank=True)
     rating = models.FloatField(default=0.0)
     total_ratings = models.IntegerField(default=0)
+    
 
 class PasswordReset(models.Model):
     '''
