@@ -18,7 +18,7 @@ class UserViewSet(generics.ListCreateAPIView):
     View for listing and creating users.
     '''
     queryset = User.objects.all()
-    parser_classes = (MultiPartParser, FormParser) #add parser classes to handle file uploads
+    # parser_classes = (MultiPartParser, FormParser) 
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

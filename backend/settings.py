@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import django_heroku
+import dj_database_url  
 
 load_dotenv()
 
@@ -29,6 +31,7 @@ SECRET_KEY = "django-insecure-^s0#cw5-zel*)82#&1+*9^=izh!2*%16uevoeh+pnd^a$u@n7r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CORS_ORIGIN_ALLOW_ALL = True  
 ALLOWED_HOSTS = ["*"] # This is a security risk, but it's fine for development
 
 
@@ -58,6 +61,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 ]
+
+
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -149,6 +154,11 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
+django_heroku.settings(locals())
 
 PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = 'pk_test_ce139844404216f3bb83f18dd62b648a042f1498'
