@@ -139,13 +139,14 @@ class TutorSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        ret['courses'] = instance.get_courses()
+        # Instead of calling get_courses(), we directly use the courses field
+        ret['courses'] = instance.courses.split(',') if instance.courses else []
         return ret
 
     def create(self, validated_data):
         courses = validated_data.pop('courses', [])
         instance = super().create(validated_data)
-        instance.set_courses(courses)
+        instance.courses = ','.join(courses)
         instance.save()
         return instance
 
@@ -153,7 +154,7 @@ class TutorSerializer(serializers.ModelSerializer):
         courses = validated_data.pop('courses', None)
         instance = super().update(instance, validated_data)
         if courses is not None:
-            instance.set_courses(courses)
+            instance.courses = ','.join(courses)
             instance.save()
         return instance
 
@@ -285,3 +286,4 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 pass
         
         return data
+    

@@ -124,3 +124,4 @@ class PasswordReset(models.Model):
     @classmethod
     def delete_expired_tokens(cls): #delete from db after token expires
         cls.objects.filter(token_expires__lte=timezone.now()).delete()
+        
