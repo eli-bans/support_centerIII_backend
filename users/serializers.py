@@ -13,6 +13,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import User, Student, Tutor, PasswordReset
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -77,17 +79,41 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
     
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    '''
-    Custom serializer for the JWT token response.
-    '''
-    @classmethod #classmethod decorator is used to define a method that can be called on the class itself, rather than on an instance of the class.
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['email'] = user.email
-        token['is_student'] = user.is_student
-        token['is_tutor'] = user.is_tutor
-        return token
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import Tutor
+
+class TutorUpdateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
+    courses = serializers.ListField(child=serializers.ChoiceField(choices=Course.choices))
+
+    class Meta:
+        model = Tutor
+        fields = ['profile_picture', 'first_name', 'last_name', 'year', 'email', 'courses', 'bio', 'calendly_link']
+
+    def update(self, instance, validated_data):
+        courses = validated_data.pop('courses', None)
+        instance = super().update(instance, validated_data)
+        if courses is not None:
+            instance.set_courses(courses)
+            instance.save()
+        return instance
+
+class TutorCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True)
+    courses = serializers.ListField(child=serializers.ChoiceField(choices=Course.choices))
+    
+    class Meta:
+        model = Tutor
+        fields = ['email', 'first_name', 'last_name', 'year', 'courses', 'bio', 'calendly_link']
+
+    def create(self, validated_data):
+        courses = validated_data.pop('courses', [])
+        email = validated_data.pop('email')
+        user = User.objects.get(email=email)
+        instance = Tutor.objects.create(user=user, **validated_data)
+        instance.set_courses(courses)
+        instance.save()
+        return instance
 
 class StudentSerializer(serializers.ModelSerializer):
     '''
@@ -103,16 +129,33 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_id', 'email', 'is_student', 'is_tutor']
 
 class TutorSerializer(serializers.ModelSerializer):
-    '''
-    Provides a way to serialize and deserialize the Tutor model.
-    '''
     user = UserSerializer()
     profile_picture = serializers.ImageField(required=False)
-    courses = serializers.ChoiceField(choices=Course.choices)
+    courses = serializers.ListField(child=serializers.ChoiceField(choices=Course.choices))
 
     class Meta:
         model = Tutor
-        fields = ['id', 'user', 'profile_picture', 'first_name', 'last_name', 'year', 'courses', 'bio', 'rating']
+        fields = ['id', 'user', 'profile_picture', 'first_name', 'last_name', 'year', 'courses', 'bio', 'rating', 'calendly_link']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['courses'] = instance.get_courses()
+        return ret
+
+    def create(self, validated_data):
+        courses = validated_data.pop('courses', [])
+        instance = super().create(validated_data)
+        instance.set_courses(courses)
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        courses = validated_data.pop('courses', None)
+        instance = super().update(instance, validated_data)
+        if courses is not None:
+            instance.set_courses(courses)
+            instance.save()
+        return instance
 
 class TutorRatingSerializer(serializers.Serializer):
     rating = serializers.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
@@ -165,20 +208,47 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         reset_obj.delete()
         return attrs
 
-class TutorUpdateSerializer(TutorSerializer):
+class TutorUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(read_only=True)
+    courses = serializers.ListField(child=serializers.ChoiceField(choices=Course.choices))
 
     class Meta:
         model = Tutor
-        fields = ['profile_picture', 'first_name', 'last_name', 'year', 'email', 'courses', 'bio']
+        fields = ['profile_picture', 'first_name', 'last_name', 'year', 'email', 'courses', 'bio', 'calendly_link']
+
+    def update(self, instance, validated_data):
+        courses = validated_data.pop('courses', None)
+        instance = super().update(instance, validated_data)
+        if courses is not None:
+            instance.set_courses(courses)
+            instance.save()
+        return instance
+
+class TutorCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True)
+    courses = serializers.ListField(child=serializers.ChoiceField(choices=Course.choices))
+    
+    class Meta:
+        model = Tutor
+        fields = ['email', 'first_name', 'last_name', 'year', 'courses', 'bio', 'calendly_link']
+
+    def create(self, validated_data):
+        courses = validated_data.pop('courses', [])
+        email = validated_data.pop('email')
+        user = User.objects.get(email=email)
+        instance = Tutor.objects.create(user=user, **validated_data)
+        instance.set_courses(courses)
+        instance.save()
+        return instance
 
 
 class TutorCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(write_only=True)
+    courses = serializers.MultipleChoiceField(choices=Course.choices)
     
     class Meta:
         model = Tutor
-        fields = ['email', 'first_name', 'last_name', 'year', 'courses', 'bio']
+        fields = ['email', 'first_name', 'last_name', 'year', 'courses', 'bio', 'calendly_link']
 
     def validate_email(self, value):
         try:
@@ -186,3 +256,32 @@ class TutorCreateSerializer(serializers.ModelSerializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("User with this email does not exist.")
         return value
+    
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        user = self.user
+        data['user'] = {
+            'id': user.id,
+            'email': user.email,
+            'is_student': user.is_student,
+            'is_tutor': user.is_tutor,
+        }
+        
+        if user.is_tutor:
+            try:
+                tutor = Tutor.objects.get(user=user)
+                data['user']['tutor'] = {
+                    'first_name': tutor.first_name,
+                    'last_name': tutor.last_name,
+                    'year': tutor.year,
+                    'courses': tutor.get_courses(),
+                    'bio': tutor.bio,
+                    'rating': tutor.rating,
+                    'calendly_link': tutor.calendly_link
+                }
+            except Tutor.DoesNotExist:
+                pass
+        
+        return data

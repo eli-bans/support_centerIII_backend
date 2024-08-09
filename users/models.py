@@ -87,6 +87,8 @@ class Course(models.TextChoices):
     WEB_TECH = 'WT', 'Web Technologies'
     MODELLING = 'MS', 'Modelling and Simulations'
 
+import json
+from django.db import models
 class Tutor(models.Model):
     '''
     Model for tutor users.
@@ -95,10 +97,20 @@ class Tutor(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     year = models.IntegerField()
-    courses = models.CharField(max_length=2, choices=Course.choices, default=Course.INTRO_TO_AI)
+    courses = models.CharField(max_length=255, default='')
     bio = models.TextField(blank=True)
     rating = models.FloatField(default=0.0)
     total_ratings = models.IntegerField(default=0)
+    calendly_link = models.URLField(blank=True, null=True)
+
+    # def set_courses(self, courses):
+    #     if courses:
+    #         self.courses = json.dumps(courses)
+    #     else:
+    #         self.courses = ''
+
+    # def get_courses(self):
+    #     return json.loads(self.courses)
     
 
 class PasswordReset(models.Model):
